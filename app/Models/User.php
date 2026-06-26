@@ -2,48 +2,44 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
+    protected $table = 'usuarios';
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+    protected $guarded = ['*'];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
+    protected $hidden = ['senha', 'remember_token'];
+
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verificado' => 'boolean',
+            'data_verificacao' => 'datetime',
+            'data_nascimento'  => 'date',
         ];
+    }
+
+    public function getAuthPassword(): string
+    {
+        return $this->senha;
+    }
+
+    public function ehFuncionario(): bool
+    {
+        return DB::table('niveis_acesso')
+            ->where('id', $this->nivel_acesso_id)
+            ->where('nome', 'funcionario')
+            ->exists();
+    }
+
+    public function estaApto(): bool
+    {
+        return $this->exists && $this->email_verificado === true;
     }
 }
